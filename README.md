@@ -26,13 +26,14 @@ CPU：intel i5 1135G7
 直接从万能的AUR中搜索下载即可：`yay -S webbench`
 
 - **其他**
+
 源码编译安装即可，[源码地址](http://ibiblio.org/pub/Linux/apps/www/servers/webbench-1.5.tar.gz)；
 
 
 ## 性能表现
 
 ## 注意事项
-通过makefile编译程序之后，要在WebServer-Self的文件夹目录下运行服务器程序，否则无法获取到resources文件信息，导致浏览器访问失败；
+通过makefile编译程序之后，要在WebServer-Self的文件夹目录下运行服务器程序，否则无法获取到resources路径信息，导致浏览器访问失败；
 
 ## 致谢
 
