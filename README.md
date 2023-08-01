@@ -37,7 +37,9 @@ CPU：intel i5 1135G7
 
 源码编译安装即可，[源码地址](http://ibiblio.org/pub/Linux/apps/www/servers/webbench-1.5.tar.gz)；
 
-**编译事项: **make记得加参数，因为wenbench中包含的诸多头文件在现代发行版已经转移位置：`CPPFLAGS=-I/usr/include/tirpc make`
+**编译事项:** make记得加参数，因为wenbench中包含的诸多头文件在现代发行版已经转移位置；
+
+`CPPFLAGS=-I/usr/include/tirpc make`
 
 ## 性能表现
 
