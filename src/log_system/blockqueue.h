@@ -1,4 +1,5 @@
 /**
+ * 
  * 这是一个阻塞队列的头文件，阻塞队列的作用在于：
  */
 #ifndef BLOCKQUEUE_H
@@ -39,17 +40,12 @@ public:
 
     void push_back(const T &item);
 
-    // 在前端插入一个元素，扮演生产者
     void push_front(const T &item);
 
-    // 判断pop操作是否成功，同时pop出来的元素赋给了item
-    // 扮演消费者的功能
     bool pop(T &item);
 
-    // 相比上一行，增加了一个超时判断机制
     bool pop(T &item, int timeout);
 
-    // 唤醒一个消费者线程
     void flush();
 
 private:
@@ -59,7 +55,7 @@ private:
 
     std::mutex mtx_;    // 互斥锁，用于在多线程环境中对临界区资源进行互斥访问，以确保线程安全。
 
-    bool isClose_;
+    bool isClose_;      // 记录阻塞队列的运行状态
 
     std::condition_variable condConsumer_;  // 用于线程同步，代表的是消费者变量
 
@@ -104,8 +100,9 @@ void BlockDeque<T>::Close() {
     condConsumer_.notify_all();
 };
 
-// 告诉消费者线程，可以出来干活了，需要去消费队列块中的某个元素了
-// 也可以理解为刷新一种状态
+/**
+ * 手动刷新机制，手动唤醒一个消费者线程；
+ */
 template<class T>
 void BlockDeque<T>::flush() {
     condConsumer_.notify_one();
