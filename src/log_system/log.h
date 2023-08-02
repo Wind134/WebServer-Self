@@ -1,3 +1,7 @@
+/**
+ * 这是异步日志系统实现的关键之处；
+ * 实现了在运行的同时，有专门用于处理日志的线程；
+ */
 #ifndef LOG_H
 #define LOG_H
 
@@ -31,7 +35,7 @@ public:
     bool IsOpen() { return isOpen_; }
     
 private:
-    Log();
+    Log();  // 构造函数设计为private的，其用意在于实现单例模式
     void AppendLogLevelTitle_(int level);
     virtual ~Log();
     void AsyncWrite_();
@@ -47,7 +51,7 @@ private:
     int MAX_LINES_;
 
     int lineCount_; // 记录已经写入日志的行数
-    int toDay_;
+    int toDay_;     // 当前日期，构造函数会将之设置为0
 
     bool isOpen_;   // 记录日志系统的开启状态
     
@@ -56,7 +60,7 @@ private:
     bool isAsync_;  // 控制同步或是异步写入日志
 
     FILE* fp_;      // 指向文件描述符的指针
-    std::unique_ptr<BlockDeque<std::string>> deque_;    // 指向一个元素类型为string的队列块
+    std::unique_ptr<BlockDeque<std::string>> deque_;    // 指向一个元素类型为string的异步队列
     std::unique_ptr<std::thread> writeThread_;          // 通过unique_ptr保证(写日志线程)对象的资源正确释放
     std::mutex mtx_;    // 互斥锁
 };
