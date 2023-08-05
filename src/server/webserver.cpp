@@ -153,14 +153,14 @@ void WebServer::DealRead_(HttpConn* client) {
     assert(client);
     ExtentTime_(client);    // 更新超时时间
     // 用线程处理下面的读任务
-    threadpool_->AddTask(std::bind(&WebServer::OnRead_, this, client));
+    threadpool_->submit(std::bind(&WebServer::OnRead_, this, client));
 }
 
 void WebServer::DealWrite_(HttpConn* client) {
     assert(client);
     ExtentTime_(client);
     // 用线程处理下面的写入任务
-    threadpool_->AddTask(std::bind(&WebServer::OnWrite_, this, client));
+    threadpool_->submit(std::bind(&WebServer::OnWrite_, this, client));
 }
 
 void WebServer::ExtentTime_(HttpConn* client) { // 延长时间，即设定超时
