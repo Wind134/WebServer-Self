@@ -1,91 +1,83 @@
 /*
-- 这是一个线程池的定义，接下来针对该线程池进行逐步分析
+- 这是一个基于源线程池修改的新的线程池，意在提升线程池的并发能力；
+- 主要的核心优化点在于将新建立的线程提交进一个vector数组；
+- 此外调整一些变量的设计；
 */ 
-
 #ifndef THREADPOOL_H
 #define THREADPOOL_H
 
 #include <mutex>    // 用于互斥
 #include <condition_variable>   // 用于同步
 #include <queue>    // 普通队列
+#include <vector>   // 存线程
 #include <thread>   // 调线程
 #include <cassert>  // 断言关键字
 #include <functional>   // 包含了一系列函数对象与函数模板
 class ThreadPool {
 public:
-    // explicit关键字用于避免意外的类型转换
-    explicit ThreadPool(size_t threadCount = 8): pool_(std::make_shared<Pool>()) {
+    /**
+     * @brief 线程池的构造函数，定义为显式构造；
+     * @param threadCount 线程池中的线程数量，默认为8(8线程)
+     */
+    explicit ThreadPool(size_t threadCount = 8): isClosed(false) {
             assert(threadCount > 0);
             // 下面这个for循环会创建8个不断工作的线程
             for(size_t i = 0; i < threadCount; i++) {
-                // 用一个lambda函数对象初始化一个线程对象，这里需要对lambda有详细的认识
-                // 捕获列表中，将pool_指针传给了pool
-                std::thread([pool = pool_] {
-                    // 用池中的mtx锁住，这个过程不允许打断
-                    std::unique_lock<std::mutex> locker(pool->mtx);
-                    while(true) {
-                        // 在函数对象队列非空的情况下
-                        if(!pool->tasks.empty()) {
-                            // 用了C++ 11的新特性，这样就不需要拷贝了，提升性能
-                            auto task = std::move(pool->tasks.front());
-                            // 弹出最前的元素
-                            pool->tasks.pop();
-                            locker.unlock();
-                            // task的执行无所谓，不需要保证互斥性
-                            task();
-                            locker.lock();
+                multi_thread.emplace_back(
+                    [this]() {  // this传入这个类的地址，从而lambda可以访问该类所有成员(包括私有，因为lambda对象属于类的一部分)
+                        while (true) {
+                            std::function<void()> task;
+                            {
+                                std::unique_lock<std::mutex> lock(mtx);
+                                // 同步等待，直到线程池关闭或者任务队列非空了
+                                cond_cv.wait(lock, [this] () {return isClosed || !tasks.empty();});
+                                if (isClosed && tasks.empty())  return; // 可以结束lambda表达式了
+                                task = std::move(tasks.front());
+                                tasks.pop();
+                            }
+                            task(); // 任务的执行不需要锁，这一步可以尽可能的并发
                         }
-                        // 线程池为空的情况下，如果池关了，那么说明任务做完了，可以退出这个循环 
-                        else if(pool->isClosed) break;
-                        // 如果线程池为空，且池还是开的，那么等待一个条件变量
-                        // 线程会释放锁，等待唤醒
-                        else pool->cond.wait(locker);
                     }
-                }).detach();    // detach可以将线程分离，可以与主线程并行执行，主线程不需要等待
+                );
             }
     }
 
-    // 默认构造函数
+    // 下面将不需要的默认构造函数(拷贝，移动，拷贝赋值，移动赋值等)都设置为delete的，节省资源
+    // 保留默认构造函数，因为上面定义的构造函数有一个默认值，这个默认的构造会用8个线程参数进行构造处理
     ThreadPool() = default;
+    ThreadPool(const ThreadPool&) = delete;
+    ThreadPool(ThreadPool&&) = delete;
 
-    // C++11标准的移动构造函数
-    ThreadPool(ThreadPool&&) = default;
+    ThreadPool& operator = (const ThreadPool&) = delete;
+    ThreadPool& operator = (ThreadPool&&) = delete;
+
     
     ~ThreadPool() {
-        if(static_cast<bool>(pool_)) {  // 检测pool_的存在性，nullptr->false？对吗？，为啥不直接判断嘞
-            {
-                std::lock_guard<std::mutex> locker(pool_->mtx);
-                pool_->isClosed = true;
-            }
-
-            // 通知所有正在等待的线程，这些正在等待的线程有一个特征就是，因为此刻队列为空，但是
-            // isClosed变量没有检测到true，因此这些线程都被阻塞，因此线程的特征：因为队列为空，且队列未关闭，而被阻塞。
-            // 通过下行的代码，会唤醒这些进程，然后这些进程知道了isClosed的状态，全部都会break退出循环，线程关闭
-            pool_->cond.notify_all();
+        {
+            std::unique_lock<std::mutex> lock(mtx);
+            isClosed = true;    // 设定线程池的关闭状态
         }
+        cond_cv.notify_all();   // 唤醒所有被阻塞的消费者线程
+        for (auto& threads : multi_thread)    // vector中的每个线程属于自己的任务需要完成
+            threads.join(); // threads不能定义为const的，因为join之后threads的状态要被改变了
     }
 
-    // 添加任务的函数，观察参数，发现需要是右值
-    // 这样的设计主要是为了避免拷贝，从而提高效率
-    template<class F>
-    void AddTask(F&& task) {
+    template<typename F,typename... Args>
+    void submit(F&& f,Args&&... args) {  // 传右值以保证完美转发
         {
-            std::lock_guard<std::mutex> locker(pool_->mtx);
-            pool_->tasks.emplace(std::forward<F>(task));
+            std::unique_lock<std::mutex> lock(mtx);
+            if(isClosed) throw std::runtime_error("submit on stopped ThreadPool");
+            tasks.emplace(std::bind(std::forward<F>(f),std::forward<Args>(args)...));   // 给f绑定了参数
         }
-        pool_->cond.notify_one();
+        cond_cv.notify_one();
     }
 
 private:
-    // 这是一个池子
-    struct Pool {
-        std::mutex mtx;     // 池子里有互斥锁
-        std::condition_variable cond;   // 有用于同步和通信的条件变量
-        bool isClosed;      // 表明池子开启与否的开关
-        std::queue<std::function<void()>> tasks;    // 一个任务队列，任务队列的类型是函数对象，该函数不接受参数，返回void
-    };
-    // 指向池子的智能指针，因为会被多个线程使用，因此定义为shared_ptr，这里可以联系之前unique_ptr指针指向的日志队列理解
-    std::shared_ptr<Pool> pool_;
+    std::mutex mtx;     // 互斥锁
+    std::condition_variable cond_cv;   // 面向消费者的用于同步和通信的条件变量
+    bool isClosed;      // 表明池子开启与否的开关
+    std::queue<std::function<void()>> tasks;    // 一个任务队列，任务队列的类型是函数对象，该函数不接受参数，返回void
+    std::vector<std::thread> multi_thread;
 };
 
 
