@@ -1,6 +1,6 @@
 bin
 log
-threadpool/threadpool-ori.h
+
 # Prerequisites
 *.d
 
