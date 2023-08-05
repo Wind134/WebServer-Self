@@ -62,6 +62,11 @@ public:
             threads.join(); // threads不能定义为const的，因为join之后threads的状态要被改变了
     }
 
+    /**
+     * @brief 这是一个提交任务进任务队列的函数，提交过程中会对线程池的状态进行检查；
+     * @param f f是一个函数对象；
+     * @param args args是函数的参数，由于是可变参，当然也可以为空；
+     */
     template<typename F,typename... Args>
     void submit(F&& f,Args&&... args) {  // 传右值以保证完美转发
         {
@@ -74,7 +79,7 @@ public:
 
 private:
     std::mutex mtx;     // 互斥锁
-    std::condition_variable cond_cv;   // 面向消费者的用于同步和通信的条件变量
+    std::condition_variable cond_cv;   // 面向消费者线程的用于同步和通信的条件变量
     bool isClosed;      // 表明池子开启与否的开关
     std::queue<std::function<void()>> tasks;    // 一个任务队列，任务队列的类型是函数对象，该函数不接受参数，返回void
     std::vector<std::thread> multi_thread;
