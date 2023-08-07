@@ -1,6 +1,8 @@
 /*
 - 这是一个数据库连接池
-- 数据库中应该是用户的登录信息
+- 数据库中应该是用户与数据库的连接信息
+- 也就是网页中的登录的账户信息
+- 这个数据库连接池主要还是为了在网页中实现多用户的注册与登录
 */
 #ifndef SQLCONNPOOL_H
 #define SQLCONNPOOL_H
@@ -9,13 +11,12 @@
 #include <string>
 #include <queue>
 #include <mutex>
-#include <semaphore.h>
+#include <semaphore.h>  // 调用信号量机制
 #include <thread>
 #include "../log_system/log.h" // 调用了log文件
 
 class SqlConnPool {
 public:
-    // 获取一个数据库连接池实例，确保只有一个池子
     static SqlConnPool *Instance();
 
     MYSQL *GetConn();   // 从连接池中获取一个连接，返回类型是一个指向数据库连接的指针
@@ -30,7 +31,7 @@ public:
     void ClosePool();
 
 private:
-    // 构造与析构设计为私有的是为了配合上述的单例模式，通过设计为私有
+    // 类似日志系统中的设计，构造与析构设计为私有的是为了配合实现单例模式，通过设计为私有
     // 外部无法直接创建该类的对象，可以通过上述的Instance函数去创建一个新的连接池实例
     SqlConnPool();
     ~SqlConnPool();
@@ -39,10 +40,9 @@ private:
     int useCount_;  // 正在连接数
     int freeCount_; // 空闲连接数
 
-    std::queue<MYSQL *> connQue_;   // 保存数据库连接的队列，队列元素类型为指向数据库的指针
+    std::queue<MYSQL *> connQue_;   // 保存数据库连接的队列，队列元素类型为指向数据库连接的指针
     std::mutex mtx_;
     sem_t semId_;
 };
-
 
 #endif // SQLCONNPOOL_H
