@@ -36,6 +36,7 @@ const unordered_map<string, string> HttpResponse::SUFFIX_TYPE = {
  * @brief 状态码-->服务器状态的映射；
 */
 const unordered_map<int, string> HttpResponse::CODE_STATUS = {
+    { 200, "OK" },
     { 400, "Bad Request" },
     { 403, "Forbidden" },
     { 404, "Not Found" },
@@ -100,7 +101,7 @@ void HttpResponse::MakeResponse(Buffer& buff) {
     else if(!(mmFileStat_.st_mode & S_IROTH)) { // 如果其他用户没有(读)访问权限，则错误码设定为403
         code_ = 403;
     }
-    else if(code_ == -1) { // code还是初始设定的-1，表明没有发生任何错误，那就将错误码设定为200
+    else if(code_ == -1) { // code还是初始设定的-1，表明没有发生任何错误，那就将状态码设定为200
         code_ = 200; 
     }
     ErrorHtml_();
