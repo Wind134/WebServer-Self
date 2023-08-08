@@ -182,7 +182,7 @@ void HttpResponse::AddContent_(Buffer& buff) {
     LOG_DEBUG("file path %s", (srcDir_ + path_).data());    // 在日志上打印网页文件的具体路径信息
     int* mmRet = (int*)mmap(0, mmFileStat_.st_size, PROT_READ, MAP_PRIVATE, srcFd, 0);
     if(*mmRet == -1) {
-        ErrorContent(buff, "File NotFound!");
+        ErrorContent(buff, "File NotFound!");   // 如果有错误信息，那么将错误信息写入到响应体，没有错误信息，响应体不写入信息；
         return; 
     }
     mmFile_ = (char*)mmRet; // 将内容映射到了内存，并转为字符串格式
