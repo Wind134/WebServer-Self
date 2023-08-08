@@ -1,6 +1,9 @@
 /*
-该头文件封装了所有的http连接模块，该模块将http的请求与响应做连接，中间桥梁
-实现了连接的抽象化，定义化
+- 对HTTP请求报文的解析在httprequest.h头文件中完成；
+- 对HTTP响应报文的发送在httpresponse.h头文件中处理，最终是写入到了服务器的内存缓冲区；
+- 而头文件封装了所有的http连接方法，连接无法就做两方面的事，处理请求，发送响应；
+- 该模块将http的请求与响应做连接，中间桥梁；
+- 实现了连接的抽象化定义；
 */
 #ifndef HTTP_CONN_H
 #define HTTP_CONN_H
@@ -14,46 +17,37 @@
 #include "../log_system/log.h"
 #include "../sql_connection_pool/sqlconnRAII.h"
 #include "../data_buffer/buffer.h"
-#include "httprequest.h"    // 连接请求模块的封装
-#include "httpresponse.h"   // 连接回应模块的封装
+#include "httprequest.h"    // 请求报文的解析
+#include "httpresponse.h"   // 响应报文的处理
 
 class HttpConn {
 public:
-    // 构造函数初始化文件描述符，初始化地址，初始化连接状态
     HttpConn();
-
-    // 析构函数的作用就是关闭连接
     ~HttpConn();
 
-    // 该函数初始化连接
     void init(int sockFd, const sockaddr_in& addr);
 
-    // 读取文件(套接字)描述符中的数据到缓冲区
     ssize_t read(int* saveErrno);   
 
-    // 将缓冲区的数据写入到描述符
     ssize_t write(int* saveErrno);
 
-    // 关闭连接
     void Close();
 
-    int GetFd() const;      // 获取文件描述符
+    int GetFd() const;
 
-    int GetPort() const;    // 获取端口
+    int GetPort() const;
 
-    const char* GetIP() const;  // 获取IP
+    const char* GetIP() const;
     
-    sockaddr_in GetAddr() const;    // 获取地址簇信息
+    sockaddr_in GetAddr() const;
     
-    // http连接针对http请求与http回应的处理
     bool process();
 
-    // 获取要写入的长度
     int ToWriteBytes() { 
         return iov_[0].iov_len + iov_[1].iov_len; 
     }
 
-    bool IsKeepAlive() const {  // 判断是否是持久连接
+    bool IsKeepAlive() const {
         return request_.IsKeepAlive();
     }
 
@@ -63,7 +57,7 @@ public:
     
 private:
    
-    int fd_;        // 服务端用于处理I/O的文件描述符
+    int fd_;        // 服务端用于与客户端连接通信的文件描述符
     struct  sockaddr_in addr_;  // 地址信息
 
     bool isClose_;  // 连接状态
@@ -71,12 +65,14 @@ private:
     int iovCnt_;    // iov_结构体数组的长
     struct iovec iov_[2];   // 两个缓冲区，配合readv/writev使用
     
-    Buffer readBuff_;   // 读缓冲区
-    Buffer writeBuff_;  // 写缓冲区
+    /**
+     * @brief 分配了两个缓冲区对象，一个是读缓冲区，一个写缓冲区；
+     */
+    Buffer readBuff_;   // 用来读取缓冲区中接收到的HTTP请求报文；
+    Buffer writeBuff_;  // 用来向缓冲区写入要发送的响应报文；
 
     HttpRequest request_;   // 连接请求对象
     HttpResponse response_; // 连接回应对象
 };
-
 
 #endif //HTTP_CONN_H
