@@ -44,24 +44,28 @@ public:
         CLOSED_CONNECTION,
     };
     
-    HttpRequest() { Init(); }   // 构造函数执行初始化
-    ~HttpRequest() = default;   // 默认析构
+    /**
+     * @brief 构造函数初始化HTTP连接请求；
+     */
+    HttpRequest() { Init(); }
+
+    ~HttpRequest() = default;
 
     void Init();
 
     bool parse(Buffer& buff);
 
-    std::string path() const;       // 返回path
-    std::string& path();            // 返回引用(左值)
-    std::string method() const;     // 返回method
-    std::string version() const;    // 返回版本
-    std::string GetPost(const std::string& key) const;  // 通过给定的关键字返回值，针对string类型的参数
-    std::string GetPost(const char* key) const;         // 针对char类型数组的参数
+    std::string path() const;
+    std::string& path();
+    std::string method() const;
+    std::string version() const;
+    std::string GetPost(const std::string& key) const;  
+    std::string GetPost(const char* key) const;
 
     bool IsKeepAlive() const;
 
     /* 
-    todo 
+    计算实现对FormData以及Json的解析
     void HttpConn::ParseFormData() {}
     void HttpConn::ParseJson() {}
     */
@@ -73,13 +77,8 @@ private:
     void ParsePath_();
     void ParsePost_();
     
-    // 将URL编码的表单数据解析为键值对
-    // 针对application/x-www-form-urlencoded格式提交的表单数据
     void ParseFromUrlencoded_();
 
-    // 执行用户核验的功能
-    // 分别可以完成注册信息核验以及登录信息核验的功能，注册还是登录取决于isLogin
-    // 信息的匹配需要去数据库中进行核验
     static bool UserVerify(const std::string& name, const std::string& pwd, bool isLogin);
 
     PARSE_STATE state_; // 定义一个枚举变量表示解析状态
@@ -89,9 +88,7 @@ private:
 
     static const std::unordered_set<std::string> DEFAULT_HTML;  // 存储的是默认路径
     static const std::unordered_map<std::string, int> DEFAULT_HTML_TAG; // HTML->Tag的映射
-    // 转化十六进制->十进制的函数
     static int ConverHex(char ch);
 };
-
 
 #endif //HTTP_REQUEST_H
