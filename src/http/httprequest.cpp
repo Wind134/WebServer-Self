@@ -40,6 +40,7 @@ bool HttpRequest::IsKeepAlive() const {
 /**
  * @brief 针对传入缓冲区的请求报文字段做解析，也就是解析请求报文；
  * @param buff 缓冲区对象，引用类型，可修改；
+ * @return 解析结果；
  */
 bool HttpRequest::parse(Buffer& buff) {
     const char CRLF[] = "\r\n";     // 表示回车或者换行的字符串(为了统一，选择用这个字符做换行)
