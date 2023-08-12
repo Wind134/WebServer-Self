@@ -23,16 +23,14 @@ public:
     void FreeConn(MYSQL * conn);    // 释放一个连接，并放回连接池以供重用
     int GetFreeConnCount(); // 获取空闲的数据库连接池数量
 
-    // 执行初始化功能
     void Init(const char* host, int port,
               const char* user,const char* pwd, 
               const char* dbName, int connSize);
-    // 关闭整个连接池          
+
     void ClosePool();
 
 private:
-    // 类似日志系统中的设计，构造与析构设计为私有的是为了配合实现单例模式，通过设计为私有
-    // 外部无法直接创建该类的对象，可以通过上述的Instance函数去创建一个新的连接池实例
+
     SqlConnPool();
     ~SqlConnPool();
 
