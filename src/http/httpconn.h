@@ -43,10 +43,17 @@ public:
     
     bool process();
 
+    /**
+     * @brief 返回要写入(套接字)的字节数，即便是条件触发，只要需要写入的字节数较多，就得重复处理，这是write函数的机制；
+     * @return 待写入套接字描述符的数据长度；
+     */
     int ToWriteBytes() { 
         return iov_[0].iov_len + iov_[1].iov_len; 
     }
 
+    /**
+     * @brief 返回HTTP的持久连接状态；
+     */
     bool IsKeepAlive() const {
         return request_.IsKeepAlive();
     }
