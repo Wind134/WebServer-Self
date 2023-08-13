@@ -1,5 +1,7 @@
 /*
-这是一个基于堆的定时器
+介绍：
+- 这是一个基于堆的定时器，可以处理一些超时连接的任务；
+- 主要的机制就是调用回调函数，执行相应的工作；
 */ 
 #ifndef HEAP_TIMER_H
 #define HEAP_TIMER_H
@@ -14,13 +16,33 @@
 #include <chrono>
 #include "../log_system/log.h"
 
-typedef std::function<void()> TimeoutCallBack;  // 定义了一个类型别名TimeoutCallBack，它是一个函数类型，参数为空，返回为空
-typedef std::chrono::high_resolution_clock Clock;   // 高精度时钟，用来测量时间间隔
-typedef std::chrono::milliseconds MS;   // C++标准库中提供的表示毫秒的时间单位类型
+/**
+ * @brief 定义了一个函数对象类型，这是一个回调函数，超时则执行该函数；
+ */
+typedef std::function<void()> TimeoutCallBack;
+
+/**
+ * @brief 定义了一个高精度时钟类型；
+ */
+typedef std::chrono::high_resolution_clock Clock;
+
+/**
+ * @brief 定义了一个毫秒级别的时间单位；
+ */
+typedef std::chrono::milliseconds MS;
+
+/**
+ * @brief 一个简单的别名定义；
+ */
 typedef Clock::time_point TimeStamp;    // 给时间点定义一个别名
 
-// TimerNode结构体可以用来表示一个定时器节点，其中包含了唯一标识符、过期时间点和回调函数等信息。
-// 这样的结构体可以用于实现定时任务、事件调度等功能。
+/**
+ * @brief TimerNode结构体可以用来表示一个定时器节点，该结构体可以用于实现定时任务、事件调度等功能。
+ * @param id 节点的唯一标识符；
+ * @param expires 过期时间点；
+ * @param cd 回调函数；
+ * @param < 被重载的小于运算符；
+ */
 struct TimerNode {
     int id;
     TimeStamp expires;  // 理解为消亡的时间点？
@@ -29,14 +51,23 @@ struct TimerNode {
         return expires < t.expires;
     }
 };
+
+/**
+ * @brief 基于小根堆的定时器类，类中附带了一系列成员以及方法；
+ */
 class HeapTimer {
 public:
+    /**
+     * @brief 构造函数，只干了一件事，预留了堆的空间；
+     */
     HeapTimer() { heap_.reserve(64); }  // 预留64个TimerNode
 
+    /**
+     * @brief 析构函数，任务是清空所有内容；
+     */
     ~HeapTimer() { clear(); }   // 析构，清空内容
     
-    // 调整指定id的结点信息
-    void adjust(int id, int newExpires);
+    void adjust(int id, int timeout);
 
     void add(int id, int timeOut, const TimeoutCallBack& cb);
 
@@ -62,7 +93,7 @@ private:
 
     std::vector<TimerNode> heap_;   // 定义了一个TimerNode的数组(起始本质上是维护了一个堆(堆是完全二叉树))
 
-    std::unordered_map<int, size_t> ref_;   // 定时器节点ID->heap_位置的映射
+    std::unordered_map<int, size_t> ref_;   // 定时器节点ID->heap_位置的映射；
 };
 
 #endif //HEAP_TIMER_H

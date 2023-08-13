@@ -1,11 +1,17 @@
 /*
-定时器的具体实现
+定时器的具体实现，针对小根堆的调整，制定了两种形式：
+- 一是上浮操作，如果上浮操作没进行则进行下沉操作；
+- 二是下沉操作，同上；
  */ 
 #include "heaptimer.h"
 
+/**
+ * @brief 上浮调整指定索引的结点的位置；
+ * @param i 要进行上浮操作的结点索引号；
+ */
 void HeapTimer::siftup_(size_t i) {
     assert(i >= 0 && i < heap_.size());
-    size_t j = (i - 1) / 2; // 找到父节点，不断上浮，这部分属于堆的维护算法
+    size_t j = (i - 1) / 2; // 找到父节点，不断上浮，直到根节点；
     while(j >= 0) {
         if(heap_[j] < heap_[i]) { break; }
         SwapNode_(i, j);
@@ -22,38 +28,50 @@ void HeapTimer::SwapNode_(size_t i, size_t j) {
     ref_[heap_[j].id] = j;
 } 
 
-bool HeapTimer::siftdown_(size_t index, size_t n) { // 调整指定index的节点位置
+/**
+ * @brief 下沉调整指定索引的结点的位置；
+ * @param index 要进行下沉操作处理的结点索引号；
+ * @param n 初步判断是要进行下沉处理的堆节点范围，一般是堆大小；
+ * @return 是否进行过下沉操作，true or false；
+ */
+bool HeapTimer::siftdown_(size_t index, size_t n) {
     assert(index >= 0 && index < heap_.size());
     assert(n >= 0 && n <= heap_.size());
-    size_t i = index;
-    size_t j = i * 2 + 1;
-    while(j < n) {
-        if(j + 1 < n && heap_[j + 1] < heap_[j]) j++;
-        if(heap_[i] < heap_[j]) break;
+    size_t i = index;       // 要处理的索引节点；
+    size_t j = i * 2 + 1;   // 要处理的结点的左节点；(堆是一颗完全二叉树)
+    while(j < n) {          // while循环不断做调整  
+        if(j + 1 < n && heap_[j + 1] < heap_[j]) j++;   // 如果右节点更小，判断右节点
+        if(heap_[i] < heap_[j]) break;  // 如果已经是一个小根堆的形式，跳出循环
         SwapNode_(i, j);
-        i = j;
+        i = j;  // 左孩子或者右孩子的下一个结点
         j = i * 2 + 1;
     }
     return i > index;
 }
 
-void HeapTimer::add(int id, int timeout, const TimeoutCallBack& cb) {   // 给定了超时信息
+/**
+ * @brief 添加结点的操作，并且附带了相应的回调函数；
+ * @param id 结点ID；
+ * @param timeout 要添加的结点的超时时间；
+ * @param cb 回调函数；
+ */
+void HeapTimer::add(int id, int timeout, const TimeoutCallBack& cb) {   // 给定了超时信息；
     assert(id >= 0);
     size_t i;
-    if(ref_.count(id) == 0) {   // 如果哈希中没有找到该ID，那么新建
-        /* 新节点：堆尾插入，调整堆 */
+    if(ref_.count(id) == 0) {   // 如果哈希中没有找到该ID，那么新建；
+        // 新节点：堆尾插入，调整堆；
         i = heap_.size();
-        ref_[id] = i;
-        heap_.push_back({id, Clock::now() + MS(timeout), cb});  // 直接构造定时器节点？
-        siftup_(i);
+        ref_[id] = i;   // 更新新ID的索引；
+        heap_.push_back({id, Clock::now() + MS(timeout), cb});  // 直接构造定时器节点(不用管函数，函数不属于类成员)
+        siftup_(i); // 最后一行添加的当然只能进行上浮操作；
     } 
     else {
-        /* 已有结点：调整堆 */
-        i = ref_[id];   // 找到索引
-        heap_[i].expires = Clock::now() + MS(timeout);
-        heap_[i].cb = cb;
-        if(!siftdown_(i, heap_.size())) {   // 下沉成功即实现目的
-            siftup_(i); // 失败就进行上浮操作
+        // 已有结点：调整堆；
+        i = ref_[id];   // 找到索引；
+        heap_[i].expires = Clock::now() + MS(timeout);  // 赋新的时间点；
+        heap_[i].cb = cb;   // 更新回调函数；
+        if(!siftdown_(i, heap_.size())) {   // 如果没有进行下沉处理；
+            siftup_(i); // 则进行上浮操作，反正得进行上浮操作；
         }
     }
 }
@@ -87,10 +105,17 @@ void HeapTimer::del_(size_t index) {
     heap_.pop_back();
 }
 
+/**
+ * @brief 调整小根堆，指定新的超时时间；
+ * @param id 要调整的节点序列号；
+ */
 void HeapTimer::adjust(int id, int timeout) {
-    assert(!heap_.empty() && ref_.count(id) > 0);
-    heap_[ref_[id]].expires = Clock::now() + MS(timeout);;
-    siftdown_(ref_[id], heap_.size());
+    assert(!heap_.empty() && ref_.count(id) > 0);   // 前提条件
+    heap_[ref_[id]].expires = Clock::now() + MS(timeout);  // 新的时间点
+    if(!siftdown_(ref_[id], heap_.size())) {   // 如果没有进行下沉处理；
+        siftup_(ref_[id]); // 则进行上浮操作，反正得进行上浮操作；
+    }
+    // siftdown_(ref_[id], heap_.size());  // 调整结点位置(一定是进行下沉操作？)
 }
 
 void HeapTimer::tick() {
