@@ -158,6 +158,7 @@ bool HttpConn::process() {  // 该函数还没将缓冲区信息写入到套接�
         response_.Init(srcDir, request_.path(), false, 400);    // 解析失败则返回错误信息，错误码设置为400
     }
 
+    // 解析完http的请求消息之后，服务器返回请求报文；
     response_.MakeResponse(writeBuff_); // 服务器将响应报文写入到写缓冲区；
     // 数组中第一个缓冲区写入响应报文的信息；
     iov_[0].iov_base = const_cast<char*>(writeBuff_.Peek());

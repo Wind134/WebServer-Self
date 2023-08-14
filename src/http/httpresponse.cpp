@@ -17,7 +17,7 @@ const unordered_map<string, string> HttpResponse::SUFFIX_TYPE = {
     { ".txt",   "text/plain" },
     { ".rtf",   "application/rtf" },
     { ".pdf",   "application/pdf" },
-    { ".word",  "application/nsword" },
+    { ".word",  "application/msword" }, // 修复文件类型描述的错误
     { ".png",   "image/png" },
     { ".gif",   "image/gif" },
     { ".jpg",   "image/jpeg" },
