@@ -20,6 +20,11 @@ void HeapTimer::siftup_(size_t i) {
     }
 }
 
+/**
+ * @brief 交换堆中某两个结点的信息；
+ * @param i i结点；
+ * @param j j结点；
+ */
 void HeapTimer::SwapNode_(size_t i, size_t j) {
     assert(i >= 0 && i < heap_.size());
     assert(j >= 0 && j < heap_.size());
@@ -76,19 +81,25 @@ void HeapTimer::add(int id, int timeout, const TimeoutCallBack& cb) {   // 给�
     }
 }
 
+/**
+ * @brief 删除指定id结点，并触发回调函数；
+ * @param id 要删除的结点id；
+ */
 void HeapTimer::doWork(int id) {
-    /* 删除指定id结点，并触发回调函数 */
     if(heap_.empty() || ref_.count(id) == 0) {
         return;
     }
     size_t i = ref_[id];
     TimerNode node = heap_[i];
     node.cb();
-    del_(i);
+    del_(i);    // 删除结点
 }
 
+/**
+ * @brief 删除堆中指定位置的结点；
+ * @param index 索引号；
+ */
 void HeapTimer::del_(size_t index) {
-    /* 删除指定位置的结点 */
     assert(!heap_.empty() && index >= 0 && index < heap_.size());
     /* 将要删除的结点换到队尾，然后调整堆 */
     size_t i = index;
@@ -118,8 +129,10 @@ void HeapTimer::adjust(int id, int timeout) {
     // siftdown_(ref_[id], heap_.size());  // 调整结点位置(一定是进行下沉操作？)
 }
 
+/**
+ * @brief 清除超时结点，最前面的结点一定是超时时间最短的结点;
+ */
 void HeapTimer::tick() {
-    /* 清除超时结点 */
     if(heap_.empty()) {
         return;
     }
@@ -128,24 +141,34 @@ void HeapTimer::tick() {
         if(std::chrono::duration_cast<MS>(node.expires - Clock::now()).count() > 0) { 
             break;  // 没超时则中断
         }
-        node.cb();
-        pop();
+        node.cb();  // 超时了则执行回调函数
+        pop();      // 弹出结点
     }
 }
 
+/**
+ * @brief 删除堆顶节点；
+ */
 void HeapTimer::pop() { 
     assert(!heap_.empty());
     del_(0);    // 删除第一个
 }
 
+/**
+ * @brief 清除整个堆，释放堆中所有成员占用的空间；
+ */
 void HeapTimer::clear() {
     ref_.clear();   // 清空哈希表
     heap_.clear();  // 清空堆
 }
 
+/**
+ * @brief 获取当前最近的定时器到期时间，以毫秒为单位返回时间间隔；
+ * @return 堆顶结点的超时时间；
+ */
 int HeapTimer::GetNextTick() {
     tick(); // 清空超时节点
-    size_t res = -1;
+    int64_t res = -1;
     if(!heap_.empty()) {
         res = std::chrono::duration_cast<MS>(heap_.front().expires - Clock::now()).count();
         if(res < 0) { res = 0; }

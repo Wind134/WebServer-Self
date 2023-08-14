@@ -73,13 +73,13 @@ public:
 
     void doWork(int id);
 
-    void clear();   // 清空所有内容
+    void clear();
 
-    void tick();    // 清除超时结点
+    void tick();
 
-    void pop();     // 推出最前面的元素
+    void pop();
 
-    int GetNextTick();  // 获取当前最近的定时器到期时间，以毫秒为单位返回时间间隔。
+    int GetNextTick();
 
 private:
     void del_(size_t i);    // 删除指定位置的结点
