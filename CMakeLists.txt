@@ -8,8 +8,6 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)   # 可执行程序路径
 
 # set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMakeModule/;${CMAKE_MODULE_PATH};") # 设置CMake模块路径
 
-find_package(Threads REQUIRED)  # 线程库
-
 aux_source_directory(./src/data_buffer BUFFER)
 aux_source_directory(./src/http HTTP)
 aux_source_directory(./src/log_system LOG)
@@ -25,4 +23,5 @@ add_executable(WebServer_Self ${ALL_SOURCES} ${PROJECT_SOURCE_DIR}/src/main.cpp)
 include_directories(/usr/include/mysql)
 link_directories(/usr/lib)
 
-target_link_libraries(WebServer_Self ${CMAKE_THREAD_LIBS_INIT} mysqlclient)    # 添加线程以及MySQL相关的库，链接需要使用到
+find_package(Threads REQUIRED)  # 线程库
+target_link_libraries(WebServer_Self pthread mysqlclient)    # 添加线程以及MySQL相关的库，链接需要使用到
