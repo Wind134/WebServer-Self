@@ -46,7 +46,7 @@ WebServer::WebServer(
     SqlConnPool::Instance()->Init("localhost", sqlPort, sqlUser, sqlPwd, dbName, connPoolNum);
 
     InitEventMode_(trigMode);   // 初始化事件模式
-    if(!InitSocket_()) { isClose_ = true;}  // 初始化成功，则表明连接已经建立
+    if(!InitSocket_()) { isClose_ = true; }  // 初始化成功，则表明连接已经建立
 
     if(openLog) {   // 如果开启了日志记录系统
         Log::Instance()->init(logLevel, "./log", ".log", logQueSize);   // 初始化
@@ -80,7 +80,10 @@ WebServer::~WebServer() {
  */
 void WebServer::InitEventMode_(int trigMode) {  // 初始化事件模式(条件触发 or 边缘触发)
     listenEvent_ = EPOLLRDHUP;  // 监听事件(对方关闭连接或者处于半关闭...)，这个时候要准备关闭连接
-    connEvent_ = EPOLLONESHOT | EPOLLRDHUP; // 连接事件同时关注两种状态(其中前者表示每个连接只触发一次事件，需要重新设置事件)
+    
+    // 连接事件同时关注两种状态(其中前者表示每个连接只触发一次事件，需要重新设置事件)
+    // 确保每个连接只被一个处理线程或进程处理
+    connEvent_ = EPOLLONESHOT | EPOLLRDHUP; 
     switch (trigMode)
     {
     case 0: // 传入0，保持默认
@@ -276,7 +279,7 @@ void WebServer::OnWrite_(HttpConn* client) {
         }
     }
     else if(ret < 0) {  // 如果没写完，且返回的值异常
-        if(writeErrno == EAGAIN) {  // 如果只是由于延迟而产生的异常，则试着继续写
+        if(writeErrno == EAGAIN) {  // 如果只是由于延迟而产生的异常，则试着继续写(就是将该错误放行的意思)
             /* 继续传输 */
             epoller_->ModFd(client->GetFd(), connEvent_ | EPOLLOUT);
             return;
@@ -372,6 +375,6 @@ int WebServer::SetFdNonblock(int fd) {
     // fcntl(fd, F_GETFD, 0)首先返回了原有的状态标志，就要这个原有的标志进行了添加；
     // 而下行代码是直接设置，忽略了原有标志； 
     // return fcntl(fd, F_SETFL, O_NONBLOCK);
-    // 修复错误，需要获取的是套接字描述符的文件阻塞状态；F_GETFL->F_GETFD
+    // 同时修复错误，需要获取的是套接字描述符的文件阻塞状态；F_GETFD->F_GETFL
     return fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
 }

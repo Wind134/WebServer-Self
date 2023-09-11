@@ -40,7 +40,6 @@ private:
     virtual ~Log();
     void AsyncWrite_();
 
-private:
     static const int LOG_PATH_LEN = 256;    // 路径字符串长度
     static const int LOG_NAME_LEN = 256;    // 日志文件名字长
     static const int MAX_LINES = 50000;
@@ -70,18 +69,18 @@ private:
 // log为指向一个log实例的指针
 // '##'操作符用于连接前面的标识符(如果存在)和可变参数
 #define LOG_BASE(level, format, ...) \
-    do {\
-        Log* log = Log::Instance();\
-        if (log->IsOpen() && log->GetLevel() <= level) {\
-            log->write(level, format, ##__VA_ARGS__); \
-            log->flush();\
-        }\
-    } while(0);
+{\
+    Log* log = Log::Instance();\
+    if (log->IsOpen() && log->GetLevel() <= level) {\
+        log->write(level, format, ##__VA_ARGS__); \
+        log->flush();\
+    }\
+}
 
 // 下面这个宏定义了四种日志级别，DEBUG INFO WARN ERROR分别对应0 1 2 3四种日志级别
-#define LOG_DEBUG(format, ...) do {LOG_BASE(0, format, ##__VA_ARGS__)} while(0);
-#define LOG_INFO(format, ...) do {LOG_BASE(1, format, ##__VA_ARGS__)} while(0);
-#define LOG_WARN(format, ...) do {LOG_BASE(2, format, ##__VA_ARGS__)} while(0);
-#define LOG_ERROR(format, ...) do {LOG_BASE(3, format, ##__VA_ARGS__)} while(0);
+#define LOG_DEBUG(format, ...) {LOG_BASE(0, format, ##__VA_ARGS__)}
+#define LOG_INFO(format, ...) {LOG_BASE(1, format, ##__VA_ARGS__)}
+#define LOG_WARN(format, ...) {LOG_BASE(2, format, ##__VA_ARGS__)}
+#define LOG_ERROR(format, ...) {LOG_BASE(3, format, ##__VA_ARGS__)}
 
 #endif //LOG_H

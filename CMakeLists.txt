@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)    # 最低要求版本
 
-project(WebServer-Self)     # 项目名
+project(WebServer_Self)     # 项目名
 
 set(CMAKE_CXX_STANDARD 14)  # 启用c++ 14标准
 
@@ -20,9 +20,9 @@ aux_source_directory(./src/timer TIMER)
 
 set(ALL_SOURCES ${BUFFER} ${HTTP} ${LOG} ${SERVER} ${SQL_CONN_POOL} ${THREADPOOL} ${TIMER}) # 合在一处
 
-add_executable(WebServer-Self ${ALL_SOURCES} ${PROJECT_SOURCE_DIR}/src/main.cpp)
+add_executable(WebServer_Self ${ALL_SOURCES} ${PROJECT_SOURCE_DIR}/src/main.cpp)
 
 include_directories(/usr/include/mysql)
 link_directories(/usr/lib)
 
-target_link_libraries(WebServer-Self ${CMAKE_THREAD_LIBS_INIT} mysqlclient)    # 添加线程以及MySQL相关的库，链接需要使用到
+target_link_libraries(WebServer_Self ${CMAKE_THREAD_LIBS_INIT} mysqlclient)    # 添加线程以及MySQL相关的库，链接需要使用到

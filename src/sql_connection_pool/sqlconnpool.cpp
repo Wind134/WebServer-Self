@@ -88,6 +88,7 @@ MYSQL* SqlConnPool::GetConn() {
         lock_guard<mutex> locker(mtx_);
         sql = connQue_.front();
         connQue_.pop(); // 使用队列中的一个连接
+        --freeCount_;
         if (useCount_ < MAX_CONN_) ++useCount_;    // pop出去的应该就是要使用的
     }
     return sql; // 返回连接的地址
@@ -101,6 +102,7 @@ void SqlConnPool::FreeConn(MYSQL* sql) {
     lock_guard<mutex> locker(mtx_);
     connQue_.push(sql); // 将连接压进去
     if (useCount_ > 0) --useCount_;
+    if (freeCount_ < MAX_CONN_) ++freeCount_;
     // 通知其他线程，有一个新的可用连接了
     sem_post(&semId_);
 }

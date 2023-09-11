@@ -14,7 +14,7 @@
 #include <stdlib.h>      // atoi()函数将字符串转为整数类型
 #include <errno.h>      
 
-#include "../log_system/log.h"
+// #include "../log_system/log.h"
 #include "../sql_connection_pool/sqlconnRAII.h"
 #include "../data_buffer/buffer.h"
 #include "httprequest.h"    // 请求报文的解析

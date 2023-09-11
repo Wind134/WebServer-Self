@@ -39,26 +39,26 @@ private:
     bool InitSocket_();
 
     void InitEventMode_(int trigMode);
+
+    void DealListen_();
+
+    void OnProcess(HttpConn* client);
     
-    void AddClient_(int fd, sockaddr_in addr);
+    void AddClient_(int fd, sockaddr_in addr); 
 
-    void DealListen_(); 
+    void OnRead_(HttpConn* client);
 
-    void DealWrite_(HttpConn* client);
+    void OnWrite_(HttpConn* client);
 
     void DealRead_(HttpConn* client);
+
+    void DealWrite_(HttpConn* client);
 
     void SendError_(int fd, const char*info);
 
     void ExtentTime_(HttpConn* client);
 
     void CloseConn_(HttpConn* client);
-
-    void OnRead_(HttpConn* client);
-
-    void OnWrite_(HttpConn* client);
-
-    void OnProcess(HttpConn* client);
 
     static const int MAX_FD = 65536;    // 服务器能处理的最大连接数
 

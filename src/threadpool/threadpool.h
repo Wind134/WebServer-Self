@@ -27,6 +27,9 @@ public:
                     [this]() {  // this传入这个类的地址，从而lambda可以访问该类所有成员(包括私有，因为lambda对象属于类的一部分)
                         while (true) {
                             std::function<void()> task;
+
+                            // 下面这个环节之所以要加锁，是因为要处理任务队列这一共享资源
+                            // 不要误判为线程与线程之间的同步哈，否则就失去了意义
                             {
                                 std::unique_lock<std::mutex> lock(mtx);
                                 // 同步等待，直到线程池关闭或者任务队列非空了
@@ -35,7 +38,9 @@ public:
                                 task = std::move(tasks.front());
                                 tasks.pop();
                             }
-                            task(); // 任务的执行不需要锁，这一步可以尽可能的并发
+
+                            // 对各线程所获取的任务的执行不需要锁，这一步可以尽可能的并发
+                            task();
                         }
                     }
                 );
