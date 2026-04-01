@@ -12,7 +12,7 @@
 void HeapTimer::siftup_(size_t i) {
     assert(i >= 0 && i < heap_.size());
     size_t j = (i - 1) / 2; // 找到父节点，不断上浮，直到根节点；
-    while(j >= 0) {
+    while(j > 0) {
         if(heap_[j] < heap_[i]) { break; }
         SwapNode_(i, j);
         i = j;
@@ -60,7 +60,7 @@ bool HeapTimer::siftdown_(size_t index, size_t n) {
  * @param timeout 要添加的结点的超时时间；
  * @param cb 回调函数；
  */
-void HeapTimer::add(int id, int timeout, const TimeoutCallBack& cb) {   // 给定了超时信息；
+void HeapTimer::add(int id, int timeout, const TimeoutCallBack& cb) { fprintf(stderr, "[DEBUG] add id=%d\n", id);   // 给定了超时信息；
     assert(id >= 0);
     size_t i;
     if(ref_.count(id) == 0) {   // 如果哈希中没有找到该ID，那么新建；

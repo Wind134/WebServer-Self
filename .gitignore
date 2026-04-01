@@ -1,6 +1,7 @@
 bin
 log
 CMakeConfigs
+build/
 
 # Prerequisites
 *.d
@@ -34,3 +35,4 @@ CMakeConfigs
 *.exe
 *.out
 *.app
+*.log
